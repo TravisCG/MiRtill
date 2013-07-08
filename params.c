@@ -19,9 +19,15 @@ void printHelp(){
 int parseParams(int argc, char **argv, Params *params){
    int i;
 
+   /* Default settings */
+   params->port     = 6379;
+   params->database = 0;
+
    for(i = 1; i < argc; i++){
       if(!strcmp(argv[i], "-f")){
          /* Store filename*/
+         params->filename = malloc(strlen(argv[i+1])+1);
+         strcpy(params->filename, argv[i+1]);
       }
       if(!strcmp(argv[i], "-d")){
          params->database = atoi(argv[i+1]);
