@@ -21,21 +21,16 @@ int main(int argc, char **argv){
       return(0);
    }
 
+
+   /* Store sequences in redis database */
    input = fopen(params.filename, "r");
    while( (len = getline(&key, &store, input)) != -1){
       if(key[0] == '>') continue; /* skip fasta header */
       key[len-1] = '\0'; /* remove newline */
 
       /* Store key in redis database */
-      replay = redisCommand(redis, "exists %s", key);
-      if(replay->integer == 0){
-         /* Key does not exists */
-         redisCommand(redis, "set %s 1", key);
-      }
-      else{
-         /* Key exists */
-         redisCommand(redis, "incr %s", key);
-      }
+      replay = redisCommand(redis, "incr %s", key);
+      freeReplyObject(replay);
    }
    free(key);
    fclose(input);
