@@ -1,9 +1,9 @@
 CC=gcc
-CLIBS=-lhiredis
+CLIBS=-L/usr/lib/x86_64-linux-gnu -lhiredis
 CFLAGS=-Wall -W -pedantic
 
 mirtill: mirtill.o params.o levenshtein.o
-	$(CC) $(CLIBS) *.o -o mirtill
+	$(CC) *.o $(CLIBS) -o mirtill
 mirtill.o: mirtill.c
 	$(CC) $(CFLAGS) mirtill.c -c
 levenshtein.o: levenshtein.c levenshtein.h

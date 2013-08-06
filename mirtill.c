@@ -2,16 +2,53 @@
 #include <stdlib.h>
 #include <hiredis/hiredis.h>
 #include "params.h"
+#include "levenshtein.h"
 
-int main(int argc, char **argv){
-   redisContext *redis;
-   redisReply *replay;
-   Params params;
+#define MAX_DISTANCE 4
+
+void store(Params params, redisContext *redis){
    FILE *input;
    char *key = NULL;
+   redisReply *replay;
    ssize_t len;
    size_t store;
 
+   input = fopen(params.filename, "r");
+   while( (len = getline(&key, &store, input)) != -1){
+      if(key[0] == '>') continue; /* skip fasta header */
+      key[len-1] = '\0'; /* remove newline */
+
+      /* Store key in redis database */
+      replay = redisCommand(redis, "incr raw:%s", key);
+      freeReplyObject(replay);
+   }
+   free(key);
+   fclose(input);
+}
+
+void clustering(redisContext *redis){
+   redisReply *r;
+   unsigned int i,j,dist;
+
+   r = redisCommand(redis, "keys raw:*");
+   printf("element number: %u\n", (unsigned int)r->elements);
+   /* TODO too slow */
+   for(i = 0; i < r->elements-1; i++){
+      for(j = i+1; j < r->elements; j++){
+         dist = levenshtein(r->element[i]->str, r->element[j]->str);
+         if(dist < MAX_DISTANCE){
+            /* FIXME check the return value */
+            redisCommand(redis, "sadd conn:%s %s", r->element[i]->str, r->element[j]->str);
+            printf("%u %s %s %d\n", i, r->element[i]->str, r->element[j]->str, dist);
+         }
+      }
+   }
+   freeReplyObject(r);
+}
+
+int main(int argc, char **argv){
+   redisContext *redis;
+   Params params;
    parseParams(argc, argv, &params);
 
    /* Connecting to database */
@@ -21,19 +58,13 @@ int main(int argc, char **argv){
       return(0);
    }
 
-
    /* Store sequences in redis database */
-   input = fopen(params.filename, "r");
-   while( (len = getline(&key, &store, input)) != -1){
-      if(key[0] == '>') continue; /* skip fasta header */
-      key[len-1] = '\0'; /* remove newline */
+   printf("Storing reads to database\n");
+   store(params, redis);
 
-      /* Store key in redis database */
-      replay = redisCommand(redis, "incr %s", key);
-      freeReplyObject(replay);
-   }
-   free(key);
-   fclose(input);
+   /* Clustering */
+   printf("Start clustering\n");
+   clustering(redis);
 
    /* Free resources*/
    redisFree(redis);
