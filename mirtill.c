@@ -38,7 +38,7 @@ void clustering(redisContext *redis){
          dist = levenshtein(r->element[i]->str, r->element[j]->str);
          if(dist < MAX_DISTANCE){
             /* FIXME check the return value */
-            redisCommand(redis, "sadd conn:%s %s", r->element[i]->str, r->element[j]->str);
+            redisCommand(redis, "sadd conn:%s %s", (r->element[i]->str)+4, r->element[j]->str);
             printf("%u %s %s %d\n", i, r->element[i]->str, r->element[j]->str, dist);
          }
       }
