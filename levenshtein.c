@@ -22,9 +22,10 @@ int levenshtein(char *s, char *t){
    n = strlen(s);
    m = strlen(t);
 
+   if ((n==0) || (m==0)) return(0);
+
    d = malloc(sizeof(int) * n * m);
 
-   if ((n==0) || (m==0)) return(0);
 
    for(i=0; i<n; i++){
       d[i] = i;
