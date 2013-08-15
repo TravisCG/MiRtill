@@ -46,6 +46,23 @@ void clustering(redisContext *redis){
    freeReplyObject(r);
 }
 
+void filter(redisContext *redis, int min_abu){
+   redisReply *r, *get;
+   unsigned int i;
+
+   r = redisCommand(redis, "keys raw:*");
+
+   for(i = 0; i < r->elements; i++){
+      get = redisCommand(redis, "get %s", r->element[i]->str);
+      if(atoi(get->str) <= min_abu){
+         printf("filter out %s\n", r->element[i]->str);
+         redisCommand(redis, "del %s", r->element[i]->str);
+      }
+      freeReplyObject(get);
+   }
+   freeReplyObject(r);
+}
+
 int main(int argc, char **argv){
    redisContext *redis;
    Params params;
@@ -61,6 +78,9 @@ int main(int argc, char **argv){
    /* Store sequences in redis database */
    printf("Storing reads to database\n");
    store(params, redis);
+
+   /* Filtering sequences with small abundance */
+   filter(redis, 1);
 
    /* Clustering */
    printf("Start clustering\n");
