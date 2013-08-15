@@ -54,7 +54,7 @@ void filter(redisContext *redis, int min_abu){
 
    for(i = 0; i < r->elements; i++){
       get = redisCommand(redis, "get %s", r->element[i]->str);
-      if(atoi(get->str) <= min_abu){
+      if(atoi(get->str) < min_abu){
          printf("filter out %s\n", r->element[i]->str);
          redisCommand(redis, "del %s", r->element[i]->str);
       }
@@ -80,7 +80,7 @@ int main(int argc, char **argv){
    store(params, redis);
 
    /* Filtering sequences with small abundance */
-   filter(redis, 1);
+   filter(redis, params.min_abundance);
 
    /* Clustering */
    printf("Start clustering\n");
